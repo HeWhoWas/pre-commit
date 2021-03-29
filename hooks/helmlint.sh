@@ -28,6 +28,11 @@ set -e
 # Note that pre-commit will only feed this the files that changed in the commit, so we can't do the filtering at the
 # hook setting level (e.g `files: Chart.yaml` will not work if no changes are made in the Chart.yaml file).
 
+# If set to true, this script will use docker to run helm. Please check helm version is correct - for a list of available
+# versions, see: https://hub.docker.com/r/alpine/helm/tags?page=1&ordering=last_updated
+export USE_DOCKER=true
+export HELM_VERSION=3.5.3
+
 # OSX GUI apps do not pick up environment variables the same way as Terminal apps and there are no easy solutions,
 # especially as Apple changes the GUI app behavior every release (see https://stackoverflow.com/q/135688/483528). As a
 # workaround to allow GitHub Desktop to work, add this (hopefully harmless) setting here.
@@ -102,6 +107,15 @@ chart_path() {
   chart_path "$changed_file_dir"
 }
 
+
+helm_lint(){
+  if [[ $USE_DOCKER ]]; then
+    docker run --rm -v "$(pwd):$(pwd)" alpine/helm:$HELM_VERSION lint $@
+  else
+    helm lint $@
+  fi
+}
+
 # An array to keep track of which charts we already linted
 seen_chart_paths=()
 
@@ -123,11 +137,11 @@ for file in "$@"; do
     if contains_element "$file_chart_path" "${seen_chart_paths[@]}"; then
       debug "Already linted $file_chart_path"
     elif [[ -z "$linter_values_arg" ]]; then
-      helm lint "$file_chart_path"
+      helm_lint "$file_chart_path"
       seen_chart_paths+=( "$file_chart_path" )
     else
       # Combine both linter_values.yaml and values.yaml
-      helm lint -f "$file_chart_path/values.yaml" -f "$linter_values_arg" "$file_chart_path"
+      helm_lint -f "$file_chart_path/values.yaml" -f "$linter_values_arg" "$file_chart_path"
       seen_chart_paths+=( "$file_chart_path" )
     fi
   fi
