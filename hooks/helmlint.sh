@@ -30,8 +30,8 @@ set -e
 
 # If set to true, this script will use docker to run helm. Please check helm version is correct - for a list of available
 # versions, see: https://hub.docker.com/r/alpine/helm/tags?page=1&ordering=last_updated
-export USE_DOCKER=true
-export HELM_VERSION=3.5.3
+export HELM_DOCKER="${HELM_DOCKER:-true}"
+export HELM_VERSION="${HELM_VERSION:-3.5.3}"
 
 # OSX GUI apps do not pick up environment variables the same way as Terminal apps and there are no easy solutions,
 # especially as Apple changes the GUI app behavior every release (see https://stackoverflow.com/q/135688/483528). As a
@@ -109,7 +109,7 @@ chart_path() {
 
 
 helm_lint(){
-  if [[ $USE_DOCKER ]]; then
+  if [[ $HELM_DOCKER ]]; then
     docker run --rm -v "$(pwd):$(pwd)" alpine/helm:$HELM_VERSION lint $@
   else
     helm lint $@
