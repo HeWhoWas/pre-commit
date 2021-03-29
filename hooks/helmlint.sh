@@ -109,7 +109,7 @@ chart_path() {
 
 
 helm_lint(){
-  if [[ $HELM_DOCKER ]]; then
+  if [[ "${HELM_DOCKER}" == "true" ]]; then
     docker run --rm -v "$(pwd):$(pwd)" alpine/helm:$HELM_VERSION lint $@
   else
     helm lint $@
